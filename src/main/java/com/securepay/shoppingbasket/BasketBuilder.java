@@ -1,5 +1,6 @@
 package com.securepay.shoppingbasket;
 
+import java.lang.reflect.GenericArrayType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -17,45 +18,44 @@ public class BasketBuilder {
 	public List<Item> getAllItems(Map<String, List<Item>> inventoryMap) {
 		Collection<List<Item>> inventory = inventoryMap.values();
 		List<Item> inventoryItems = new ArrayList<Item>();
-		inventory
-			.stream()
-			.forEach(items -> inventoryItems.addAll(items));
+		inventory.stream().forEach(items -> inventoryItems.addAll(items));
 		return inventoryItems;
 	}
 
 	/*
-	 * Method to pick items such that the sum of ratings are optimized
-	 * this method sorts all the items in the inventory by ratings and then by price
-	 * and picks items sequentially until the cost reaches $50
+	 * Method to pick items such that the sum of ratings are optimized this method
+	 * sorts all the items in the inventory by a rating/price ratio
+	 * This enables selecting the items with the most value in terms of rating
 	 * 
 	 */
 	public List<Item> pickBasketItems(Map<String, List<Item>> inventoryMap) {
 		List<Item> bucketList = new ArrayList<Item>();
-		int cost = 0;
+		int cost = 0;	
 
-		List<Item> inventoryItems = this.getAllItems(inventoryMap)
-				.stream()
-				.sorted(Comparator.comparing(Item::getRating)
-						.reversed()
-				.thenComparing(Item::getPrice))
-				.collect(Collectors.toList());		
-		
-		for(Item item : inventoryItems) {
-			if(cost == 50) {
-				break;
+		List<Item> inventoryItems = this.getAllItems(inventoryMap);
+		inventoryItems.sort(new Comparator<Item>() {
+
+			@Override
+			public int compare(Item o1, Item o2) {
+				return o2.getRating()*o1.getPrice() - o1.getRating()*o2.getPrice();
 			}
-			else if(cost + item.getPrice() < 50) {
+
+		});
+		for (Item item : inventoryItems) {
+			if (cost == 50) {
+				break;
+			} else if (cost + item.getPrice() < 50) {
 				bucketList.add(item);
 				cost += item.getPrice();
 			}
 		}
 		return bucketList;
 	}
-	
+
 	public void printBasketItems(Map<String, List<Item>> inventoryMap) {
 		int cost = 0;
 		int sumRatings = 0;
-		for(Item item: this.pickBasketItems(inventoryMap)) {
+		for (Item item : this.pickBasketItems(inventoryMap)) {
 			cost += item.getPrice();
 			sumRatings += item.getRating();
 			System.out.println(item.getCategory() + ":" + item.getName());
@@ -63,5 +63,5 @@ public class BasketBuilder {
 		System.out.println("Total cost:" + cost);
 		System.out.println("Sum of ratings:" + sumRatings);
 	}
-	
+
 }
